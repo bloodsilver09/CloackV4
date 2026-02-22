@@ -53,6 +53,7 @@ jobs:
            EXISTING_MINETEST_DIR=$PWD \
            ./util/buildbot/buildwin${{ matrix.bits }}.sh B
 
+
       # Check that the resulting binary can run (DLLs etc.)
       - name: Runtime test
         run: |
