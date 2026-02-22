@@ -6,6 +6,7 @@
 -- For example:
 -- local defaulttexturedir = core.get_current_modpath() .. "/textures/"
 -- local dump = minetest.debug.dump -- Or your custom dump function
+local LAST_TAB_SETTING_NAME = "last_main_tab"
 
 local function main_menu_formspec(this)
 
@@ -77,56 +78,38 @@ local function main_menu_formspec(this)
 end
 
 local function main_menu_buttonhandler(this, fields)
-	if this.hidden then
-		return false
-	end
+    if this.hidden then
+        return false
+    end
+    
+    local function open_tab(btn_name, create_dlg_func)
+        cache_settings:set(LAST_TAB_SETTING_NAME, btn_name)
+        local dlg = create_dlg_func()
+        dlg:set_parent(this)
+        this:hide()
+        dlg:show()
+        return true
+    end
+
     if fields.local_btn then
-        local dlg = create_local_dlg()
-		dlg:set_parent(this)
-		this:hide()
-		dlg:show()
-		ui.update()
-        return true
+        return open_tab("local_btn", create_local_dlg)
     elseif fields.online then
-        local dlg = create_online_dlg()
-		dlg:set_parent(this)
-		this:hide()
-		dlg:show()
-        return true
+        return open_tab("online", create_online_dlg)
     elseif fields.csm then
-        local dlg = create_csm_dlg()
-		dlg:set_parent(this)
-		this:hide()
-		dlg:show()
-        return true
+        return open_tab("csm", create_csm_dlg)
     elseif fields.cosmetics then
-        local dlg = create_cosmetics_dlg()
-		dlg:set_parent(this)
-		this:hide()
-		dlg:show()
-        return true
+        return open_tab("cosmetics", create_cosmetics_dlg)
     elseif fields.content then
-        local dlg = create_content_dlg()
-		dlg:set_parent(this)
-		this:hide()
-		dlg:show()
-        return true
+        return open_tab("content", create_content_dlg)
     elseif fields.settings then
-        local dlg = create_settings_dlg()
-		dlg:set_parent(this)
-		this:hide()
-		dlg:show()
-        return true
+        return open_tab("settings", create_settings_dlg)
     elseif fields.about then
-        local dlg = create_about_dlg()
-		dlg:set_parent(this)
-		this:hide()
-		dlg:show()
+        return open_tab("about", create_about_dlg)
+    elseif fields.exit then
+        -- cache_settings:set(LAST_TAB_SETTING_NAME, "")
+        core.close()
         return true
-	elseif fields.exit then
-		core.close()
-		return true
-	elseif fields.logged_in then
+    elseif fields.logged_in then
 		core.settings:set(SESSION_TOKEN_SETTING_NAME, "")
 		fetch_capes()
 		local dlg = create_sign_in_dialog()
@@ -147,10 +130,15 @@ local function main_menu_buttonhandler(this, fields)
 	elseif fields.try_quit then
 		return true
     end
-	
+    
     core.log("error", "Main Menu: "..dump(fields))
     return false
 end
+
+
+
+
+
 
 local function main_menu_eventhandler(this, event)
 	if this.hidden then
@@ -168,7 +156,38 @@ end
 
 --------------------------------------------------------------------------------
 local function show_menu(this)
-	this.hidden=false
+    this.hidden = false
+    local last_tab = cache_settings:get(LAST_TAB_SETTING_NAME)
+    if last_tab and last_tab ~= "" then
+        cache_settings:set(LAST_TAB_SETTING_NAME, "")
+		
+        local dlg = nil
+        if last_tab == "local_btn" then
+            dlg = create_local_dlg()
+        elseif last_tab == "online" then
+            dlg = create_online_dlg()
+        elseif last_tab == "csm" then
+            dlg = create_csm_dlg()
+        elseif last_tab == "content" then
+            dlg = create_content_dlg()
+        elseif last_tab == "cosmetics" then
+            dlg = create_cosmetics_dlg()
+        elseif last_tab == "settings" then
+            dlg = create_settings_dlg()
+        elseif last_tab == "about" then
+            dlg = create_about_dlg()
+        end
+        
+        if dlg then
+            dlg:set_parent(this)
+            this:hide()
+            dlg:show()
+            ui.update()
+            return
+        end
+    end
+    
+    ui.update()
 end
 
 local tabview_metatable = {
